@@ -1,0 +1,22 @@
+
+/embedded-linux-qemu-labs/toolchain
+
+1 - with arm
+// 
+export PATH=$PATH:/home/abdullah/x-tools/arm-training-linux-musleabihf/bin
+
+arm-linux-gcc -o hello hello.c
+
+qemu-arm -L '/home/abdullah/x-tools/arm-training-linux-musleabihf/arm-training-linux-musleabihf/sysroot' hello
+
+2- with mips
+
+mips-linux-gnu-gcc -o hello2_mips hello2.c -static
+
+qemu-mips ./hello2_mips
+
+
+
+
+
+
