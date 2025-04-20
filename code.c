@@ -5,26 +5,30 @@
 #include <ctype.h>
 
 #define MAX_LEN 1000000
-#define SHIFT 3
 #define min(a,b) (((a)<(b))?(a):(b))
 
 // Caesar cipher encryption
-void encrypt(char* str, int len) {
-    for (int i = 0; i < len; i++) {
-        if (isalpha(str[i])) {
-            char base = isupper(str[i]) ? 'A' : 'a';
-            str[i] = ((str[i] - base + SHIFT) % 26) + base;
-        }
+void encrypt(char* s, int n) {
+    for (int i = 0; i < n; i++) {
+        if (! isalpha(s[i])) continue;
+        char base = isupper(s[i]) ? 'A' : 'a';
+        int idx = s[i]-base;
+        idx += 3;
+        idx = idx % 26 + base ;
+        s[i] = idx ;
     }
 }
 
 // Caesar cipher decryption
-void decrypt(char* str, int len) {
-    for (int i = 0; i < len; i++) {
-        if (isalpha(str[i])) {
-            char base = isupper(str[i]) ? 'A' : 'a';
-            str[i] = ((str[i] - base - SHIFT + 26) % 26) + base;
-        }
+void decrypt(char* s, int n) {
+    for (int i = 0; i < n; i++) {
+        if (! isalpha(s[i])) continue;
+        char base = isupper(s[i]) ? 'A' : 'a';
+        int idx = s[i]-base;
+        idx += 26 - 3;
+        idx = idx % 26 + base ;
+        idx = idx % 26 + base ;
+        s[i] = idx ;
     }
 }
 
@@ -40,7 +44,6 @@ int main(int argc, char** argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
     if (rank == 0) {
-        // Console-only mode
         printf("Enter 1 for Encode, 2 for Decode: ");
         scanf("%d", &option);
         printf("Enter input text: ");
