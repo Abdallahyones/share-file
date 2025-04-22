@@ -23,7 +23,6 @@ void decrypt(char* s, int n) {
     }
 }
 
-
 int read_from_file(const char* filename, char* buffer) {
     FILE* file = fopen(filename, "r");
     if (!file) {
@@ -35,7 +34,6 @@ int read_from_file(const char* filename, char* buffer) {
     fclose(file);
     return len;
 }
-
 
 void write_to_file(const char* filename, const char* buffer, int length) {
     FILE* file = fopen(filename, "w");
@@ -58,18 +56,26 @@ int main(int argc, char** argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
+    char input_filename[256];
+    char output_filename[256];
+
     if (rank == 0) {
-   
+        if (argc < 3) {
+            fprintf(stderr, "Usage: %s <input_file> <output_file>\n", argv[0]);
+            MPI_Abort(MPI_COMM_WORLD, 1);
+        }
+
+        strncpy(input_filename, argv[1], sizeof(input_filename));
+        strncpy(output_filename, argv[2], sizeof(output_filename));
+
         printf("Enter 1 for Encode, 2 for Decode: ");
         scanf("%d", &option);
 
-      
-        input_len = read_from_file("input.txt", input);
+        input_len = read_from_file(input_filename, input);
         if (input_len < 0) {
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
     }
-
 
     MPI_Bcast(&option, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&input_len, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -86,14 +92,12 @@ int main(int argc, char** argv) {
     else
         decrypt(segment, actual_len);
 
-    
     MPI_Gather(segment, chunk_size, MPI_CHAR, result, chunk_size, MPI_CHAR, 0, MPI_COMM_WORLD);
-
 
     if (rank == 0) {
         result[input_len] = '\0';
-        write_to_file("output.txt", result, input_len);
-        printf("Output written to output.txt\n");
+        write_to_file(output_filename, result, input_len);
+        printf("Output written to %s\n", output_filename);
         free(result);
     }
 
