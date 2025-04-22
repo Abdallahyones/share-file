@@ -9,7 +9,7 @@
 
 void encrypt(char* s, int n) {
     for (int i = 0; i < n; i++) {
-        if (! isalpha(s[i])) continue;
+        if (!isalpha(s[i])) continue;
         char base = isupper(s[i]) ? 'A' : 'a';
         s[i] = base + (s[i] - base + 3) % 26;
     }
@@ -17,7 +17,7 @@ void encrypt(char* s, int n) {
 
 void decrypt(char* s, int n) {
     for (int i = 0; i < n; i++) {
-        if (! isalpha(s[i])) continue;
+        if (!isalpha(s[i])) continue;
         char base = isupper(s[i]) ? 'A' : 'a';
         s[i] = base + (s[i] - base + 26 - 3) % 26;
     }
@@ -56,25 +56,22 @@ int main(int argc, char** argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    char input_filename[256];
     char output_filename[256];
 
     if (rank == 0) {
-        if (argc < 4) {  // 👈 updated to expect 3 arguments
+        if (argc < 4) {
             fprintf(stderr, "Usage: %s <input_file> <output_file> <1=Encode, 2=Decode>\n", argv[0]);
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
 
-        strncpy(input_filename, argv[1], sizeof(input_filename));
-        strncpy(output_filename, argv[2], sizeof(output_filename));
-        option = atoi(argv[3]);  // 👈 read option from command line
-
+        option = atoi(argv[3]);
         if (option != 1 && option != 2) {
             fprintf(stderr, "Invalid option: %d. Use 1 for Encode or 2 for Decode.\n", option);
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
 
-        input_len = read_from_file(input_filename, input);
+        strncpy(output_filename, argv[2], sizeof(output_filename));
+        input_len = read_from_file(argv[1], input);
         if (input_len < 0) {
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
@@ -82,6 +79,13 @@ int main(int argc, char** argv) {
 
     MPI_Bcast(&option, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&input_len, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(output_filename, 256, MPI_CHAR, 0, MPI_COMM_WORLD);
+
+    if (rank != 0) {
+        memset(input, 0, MAX_LEN);
+    }
+
+    MPI_Bcast(input, input_len, MPI_CHAR, 0, MPI_COMM_WORLD);
 
     int chunk_size = (input_len + size - 1) / size;
     segment = (char*)malloc(chunk_size * sizeof(char));
@@ -96,11 +100,11 @@ int main(int argc, char** argv) {
         decrypt(segment, actual_len);
 
     MPI_Gather(segment, chunk_size, MPI_CHAR, result, chunk_size, MPI_CHAR, 0, MPI_COMM_WORLD);
-
+ printf("rank:\n%s\n", rank);
     if (rank == 0) {
         result[input_len] = '\0';
+       
         write_to_file(output_filename, result, input_len);
-       // printf("Output written to %s\n", output_filename);
         free(result);
     }
 
