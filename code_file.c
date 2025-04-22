@@ -60,16 +60,19 @@ int main(int argc, char** argv) {
     char output_filename[256];
 
     if (rank == 0) {
-        if (argc < 3) {
-            fprintf(stderr, "Usage: %s <input_file> <output_file>\n", argv[0]);
+        if (argc < 4) {  // 👈 updated to expect 3 arguments
+            fprintf(stderr, "Usage: %s <input_file> <output_file> <1=Encode, 2=Decode>\n", argv[0]);
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
 
         strncpy(input_filename, argv[1], sizeof(input_filename));
         strncpy(output_filename, argv[2], sizeof(output_filename));
+        option = atoi(argv[3]);  // 👈 read option from command line
 
-        printf("Enter 1 for Encode, 2 for Decode: ");
-        scanf("%d", &option);
+        if (option != 1 && option != 2) {
+            fprintf(stderr, "Invalid option: %d. Use 1 for Encode or 2 for Decode.\n", option);
+            MPI_Abort(MPI_COMM_WORLD, 1);
+        }
 
         input_len = read_from_file(input_filename, input);
         if (input_len < 0) {
@@ -97,7 +100,7 @@ int main(int argc, char** argv) {
     if (rank == 0) {
         result[input_len] = '\0';
         write_to_file(output_filename, result, input_len);
-        printf("Output written to %s\n", output_filename);
+       // printf("Output written to %s\n", output_filename);
         free(result);
     }
 
